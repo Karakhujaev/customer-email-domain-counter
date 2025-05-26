@@ -6,6 +6,7 @@ import (
 	"os"
 )
 
+
 func main() {
 	const totalRows = 1_000_0000
 	file, err := os.Create("case_unique_domains.csv")
@@ -17,10 +18,8 @@ func main() {
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
 
-	// Write header
 	writer.Write([]string{"first_name", "last_name", "email", "gender", "ip_address"})
 
-	// Generate 1 million unique domains
 	for i := 0; i < totalRows; i++ {
 		domain := fmt.Sprintf("domain%d.com", i)
 		email := fmt.Sprintf("user%d@%s", i, domain)

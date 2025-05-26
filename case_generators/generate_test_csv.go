@@ -12,6 +12,7 @@ var domains = []string{
 	"protonmail.com", "aol.com", "mail.com", "icloud.com",
 }
 
+
 func randomEmail(id int) string {
 	return fmt.Sprintf("user%d@%s", id, domains[rand.Intn(len(domains))])
 }
@@ -27,10 +28,8 @@ func main() {
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
 
-	// Write header
 	writer.Write([]string{"first_name", "last_name", "email", "gender", "ip_address"})
 
-	// Write rows
 	for i := 0; i < totalRows; i++ {
 		row := []string{
 			fmt.Sprintf("First%d", i),
