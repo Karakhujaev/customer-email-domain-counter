@@ -29,9 +29,9 @@ Project Structure
 
 ```bash
 📁 customer-email-domain-counter/
-│── 📁 customerimporter/               Core processing logic
+│── 📁 customerimporter/              Core processing logic
 │── 📁 samples/                        Sample CSV data          
-│── main.go                            Entry point CLI
+│── main.go                           Entry point CLI
 │── go.mod                             
 │── go.sum 
 ```
