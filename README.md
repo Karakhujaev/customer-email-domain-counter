@@ -27,7 +27,6 @@ go test -bench=. ./customerimporter/...
 
 Project Structure
 
-📁![Architecture](architecture.png)
 ```bash
 📁 customer-email-domain-counter/
 │── 📁 customerimporter/               Core processing logic
