@@ -24,17 +24,18 @@ go test -v -cover ./customerimporter/...
 go test -bench=. ./customerimporter/...
 ```
 
+
 Project Structure
 
-├── main.go                    Entry point CLI
-├── customerimporter/          Core processing logic
-│   ├── interview.go           CSV parsing and domain counting
-│   └── interview_test.go      Tests and benchmarks
-├── samples/                   Sample CSV data
-│   └── customers.csv
-├── go.mod                     Module definition
-└── go.sum                     Dependency checksums
-
+![Architecture](architecture.png)
+```bash
+📁 customer-email-domain-counter/
+│── 📁 customerimporter/               Core processing logic
+│── 📁 samples/                        Sample CSV data          
+│── main.go                            Entry point CLI
+│── go.mod                             
+│── go.sum 
+```
 
 Features
 
