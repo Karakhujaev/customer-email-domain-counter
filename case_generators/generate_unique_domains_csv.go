@@ -6,7 +6,6 @@ import (
 	"os"
 )
 
-
 func main() {
 	const totalRows = 1_000_0000
 	file, err := os.Create("case_unique_domains.csv")

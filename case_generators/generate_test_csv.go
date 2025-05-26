@@ -12,7 +12,6 @@ var domains = []string{
 	"protonmail.com", "aol.com", "mail.com", "icloud.com",
 }
 
-
 func randomEmail(id int) string {
 	return fmt.Sprintf("user%d@%s", id, domains[rand.Intn(len(domains))])
 }
