@@ -9,7 +9,7 @@ Architecture
 <img width="1024" alt="Screenshot 2025-05-27 at 11 52 34" src="https://github.com/user-attachments/assets/7f6b3727-cb15-4b61-a35c-a232ed37b175" />
 
 
-
+<br>
 1) Clone the Repository
 
 ```bash
