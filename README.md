@@ -3,6 +3,9 @@ Customer Email Domain Counter
 A high-performance CLI tool to process customer CSV files and count email domains.
 Optimized for large datasets with efficient memory and file handling.
 
+<br>
+<br>
+
 Architecture
 
 
