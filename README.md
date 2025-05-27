@@ -10,6 +10,8 @@ Architecture
 
 
 <br>
+<br>
+<br>
 1) Clone the Repository
 
 ```bash
