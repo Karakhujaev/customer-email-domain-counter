@@ -1,3 +1,9 @@
+// Package customerimporter reads from a CSV file and returns a sorted (data
+// structure of your choice) of email domains along with the number of customers
+// with e-mail addresses for each domain. This should be able to be ran from the
+// CLI and output the sorted domains to the terminal or to a file. Any errors
+// should be logged (or handled). Performance matters (this is only ~3k lines,
+// but could be 1m lines or run on a small machine).
 package customerimporter
 
 import (
@@ -16,13 +22,11 @@ import (
 	"golang.org/x/exp/mmap"
 )
 
-// holds a domain and the count of domain.
 type DomainResult struct {
 	Domain string
 	Count  int
 }
 
-// reads CSV file, counts email domains with mmap and concurrency, writes sorted output.
 func ProcessCSVFile(csvPath string) error {
 	outputPath := generateOutputPath(csvPath)
 
@@ -35,56 +39,53 @@ func ProcessCSVFile(csvPath string) error {
 	fileSize := int(reader.Len())
 	data := make([]byte, fileSize)
 	_, err = reader.ReadAt(data, 0)
-	if err != nil && !errors.Is(err,io.EOF) {
+	if err != nil && !errors.Is(err, io.EOF) {
 		return fmt.Errorf("failed to read mmap data: %w", err)
 	}
 
-	// skip header line
+	// Find header and determine email column index
 	headerEnd := indexOfNewline(data, 0)
 	if headerEnd == -1 {
 		return fmt.Errorf("invalid CSV: no newline in file")
+	}
+	headerLine := data[:headerEnd]
+	emailColIdx := findEmailColumnIndex(headerLine)
+	if emailColIdx == -1 {
+		return fmt.Errorf("email column not found in CSV header")
 	}
 	startPos := headerEnd + 1
 
 	numWorkers := runtime.NumCPU() * 2
 	chunks := chunkify(data, startPos, numWorkers)
 
-	// channels for results and waitgroup for workers
 	resultChan := make(chan map[string]int, numWorkers)
 	var wg sync.WaitGroup
 
-	// workers on chunks
 	for _, c := range chunks {
 		wg.Add(1)
 		go func(chunk []byte) {
 			defer wg.Done()
-			counts := processChunk(chunk)
+			counts := processChunk(chunk, emailColIdx)
 			resultChan <- counts
 		}(c)
 	}
 
-	// close resultChan when all workers done
 	go func() {
 		wg.Wait()
 		close(resultChan)
 	}()
 
-	// merge all results from workers
-	finalCounts := make(map[string]int, 1_000_000) 
+	finalCounts := make(map[string]int, 1_000_000)
 	for counts := range resultChan {
 		for domain, count := range counts {
 			finalCounts[domain] += count
 		}
 	}
 
-	// sort results
 	sortedResults := sortDomains(finalCounts)
-
-	// write output
 	return writeResults(outputPath, sortedResults)
 }
 
-// indexOfNewline returns index of '\n' or -1 if none
 func indexOfNewline(data []byte, start int) int {
 	for i := start; i < len(data); i++ {
 		if data[i] == '\n' {
@@ -94,7 +95,16 @@ func indexOfNewline(data []byte, start int) int {
 	return -1
 }
 
-// chunkify splits data into n chunks aligned on newlines
+func findEmailColumnIndex(headerLine []byte) int {
+	fields := strings.Split(string(headerLine), ",")
+	for i, field := range fields {
+		if strings.EqualFold(strings.TrimSpace(field), "email") {
+			return i
+		}
+	}
+	return -1
+}
+
 func chunkify(data []byte, start int, n int) [][]byte {
 	size := len(data) - start
 	chunkSize := size / n
@@ -112,56 +122,43 @@ func chunkify(data []byte, start int, n int) [][]byte {
 			chunks = append(chunks, data[chunkStart:end])
 			break
 		}
-		// move end forward to next newline to not split lines
 		for end < len(data) && data[end] != '\n' {
 			end++
 		}
 		if end < len(data) {
-			end++ 
+			end++
 		}
 		chunks = append(chunks, data[chunkStart:end])
 		chunkStart = end
 	}
-
 	return chunks
 }
 
-// processChunk parses a chunk of CSV lines, counts domains
-func processChunk(chunk []byte) map[string]int {
-	counts := make(map[string]int, 50_000) 
-
+func processChunk(chunk []byte, emailColIdx int) map[string]int {
+	counts := make(map[string]int, 50_000)
 	lineStart := 0
 	for lineStart < len(chunk) {
-		// find newline or end of chunk
 		lineEnd := indexOfNewline(chunk, lineStart)
 		if lineEnd == -1 {
 			lineEnd = len(chunk)
 		}
-
 		line := chunk[lineStart:lineEnd]
-
-		// Process line 
-		if domain := parseDomainFromLine(line); domain != "" {
+		if domain := parseDomainFromLine(line, emailColIdx); domain != "" {
 			counts[domain]++
 		}
-
 		lineStart = lineEnd + 1
 	}
-
 	return counts
 }
 
-// parseDomainFromLine manually parses the CSV line and extracts domain from 3rd column (email)
-func parseDomainFromLine(line []byte) string {
-	// minimal CSV parse by splitting on commas, ignoring quoted commas for simplicity here
-
+func parseDomainFromLine(line []byte, emailColIdx int) string {
 	fieldStart := 0
 	fieldNum := 0
 	var email []byte
 
 	for i := 0; i <= len(line); i++ {
 		if i == len(line) || line[i] == ',' {
-			if fieldNum == 2 {
+			if fieldNum == emailColIdx {
 				email = line[fieldStart:i]
 				break
 			}
@@ -169,15 +166,12 @@ func parseDomainFromLine(line []byte) string {
 			fieldStart = i + 1
 		}
 	}
-
 	if len(email) == 0 {
 		return ""
 	}
-
 	return extractDomain(email)
 }
 
-// extractDomain extracts and lowercases domain from email byte slice
 func extractDomain(email []byte) string {
 	atIndex := -1
 	for i := len(email) - 1; i >= 0; i-- {
@@ -189,10 +183,7 @@ func extractDomain(email []byte) string {
 	if atIndex == -1 || atIndex == len(email)-1 {
 		return ""
 	}
-
 	domain := email[atIndex+1:]
-
-	// validate domain: must contain '.'
 	hasDot := false
 	for _, b := range domain {
 		if b == '.' {
@@ -203,19 +194,14 @@ func extractDomain(email []byte) string {
 	if !hasDot || len(domain) < 3 {
 		return ""
 	}
-
-	// lowercase in place without allocation
 	for i := 0; i < len(domain); i++ {
-		b := domain[i]
-		if b >= 'A' && b <= 'Z' {
-			domain[i] = b + 32
+		if domain[i] >= 'A' && domain[i] <= 'Z' {
+			domain[i] += 'a' - 'A'
 		}
 	}
-
 	return string(domain)
 }
 
-// sortDomains sorts by count desc, then domain asc
 func sortDomains(counts map[string]int) []DomainResult {
 	results := make([]DomainResult, 0, len(counts))
 	for d, c := range counts {
@@ -230,8 +216,12 @@ func sortDomains(counts map[string]int) []DomainResult {
 	return results
 }
 
-// writeResults writes CSV output with buffer
 func writeResults(outputPath string, results []DomainResult) error {
+	err := os.MkdirAll(filepath.Dir(outputPath), os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("failed to create output dir: %w", err)
+	}
+
 	f, err := os.Create(outputPath)
 	if err != nil {
 		return fmt.Errorf("failed to create output file: %w", err)
@@ -264,11 +254,10 @@ func writeResults(outputPath string, results []DomainResult) error {
 	return nil
 }
 
-// generateOutputPath appends "_output" before extension
 func generateOutputPath(csvPath string) string {
 	dir := filepath.Dir(csvPath)
 	filename := filepath.Base(csvPath)
 	ext := filepath.Ext(filename)
 	name := strings.TrimSuffix(filename, ext)
-	return filepath.Join(dir, "/outcomes/", name+"_output"+ext)
+	return filepath.Join(dir, "outcomes", name+"_output"+ext)
 }

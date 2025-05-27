@@ -3,25 +3,38 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
+	"math/rand"
 	"os"
 	"path/filepath"
+	"time"
 )
 
+var domains = []string{
+	"gmail.com", "yahoo.com", "outlook.com", "example.com",
+	"protonmail.com", "aol.com", "mail.com", "icloud.com",
+}
+
+func randomEmail(id int) string {
+	return fmt.Sprintf("user%d@%s", id, domains[rand.Intn(len(domains))])
+}
+
 func main() {
+	rand.Seed(time.Now().UnixNano())
+
 	var rowCount int
 	var fileName string
 
 	fmt.Print("Enter number of rows to generate: ")
 	_, err := fmt.Scanf("%d\n", &rowCount)
 	if err != nil || rowCount <= 0 {
-		fmt.Println("Invalid input. Please enter a positive integer for row count.")
+		fmt.Println("Invalid input. Please enter a positive integer.")
 		return
 	}
 
-	fmt.Print("Enter output file name (data.csv): ")
+	fmt.Print("Enter output file name (customers.csv): ")
 	_, err = fmt.Scanf("%s\n", &fileName)
 	if err != nil || fileName == "" {
-		fmt.Println("Invalid input. Please provide a valid file name.")
+		fmt.Println("Invalid input. Please enter a valid file name.")
 		return
 	}
 
@@ -47,17 +60,15 @@ func main() {
 	writer.Write([]string{"first_name", "last_name", "email", "gender", "ip_address"})
 
 	for i := 0; i < rowCount; i++ {
-		domain := fmt.Sprintf("domain%d.com", i)
-		email := fmt.Sprintf("user%d@%s", i, domain)
 		row := []string{
 			fmt.Sprintf("First%d", i),
 			fmt.Sprintf("Last%d", i),
-			email,
-			[]string{"Male", "Female"}[i%2],
-			fmt.Sprintf("%d.%d.%d.%d", i%256, (i/256)%256, (i/65536)%256, (i/16777216)%256),
+			randomEmail(i),
+			[]string{"Male", "Female"}[rand.Intn(2)],
+			fmt.Sprintf("%d.%d.%d.%d", rand.Intn(256), rand.Intn(256), rand.Intn(256), rand.Intn(256)),
 		}
 		writer.Write(row)
 	}
 
-	fmt.Printf("File '%s' generated in 'samples/' directory with %d unique email domains.\n", fileName, rowCount)
+	fmt.Printf("File '%s' generated in 'samples/' directory with %d rows.\n", fileName, rowCount)
 }
