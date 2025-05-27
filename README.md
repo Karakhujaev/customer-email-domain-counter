@@ -22,7 +22,7 @@ cd customer-email-domain-counter
 2) Run main.go file with sample file
 
 ```bash
-go run main.go -file=samples/customers.csv 
+go run main.go -file={file_path} 
 ```
 
 3) Run Tests with Temporary File Samples
