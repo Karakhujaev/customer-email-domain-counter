@@ -5,7 +5,8 @@ Optimized for large datasets with efficient memory and file handling.
 
 Architecture
 
-<img width="800" alt="Screenshot 2025-05-27 at 11 50 36" src="https://github.com/user-attachments/assets/adddb7de-0cfa-4dc2-86b8-bc0d168cbba7" />
+
+<img width="1024" alt="Screenshot 2025-05-27 at 11 52 34" src="https://github.com/user-attachments/assets/7f6b3727-cb15-4b61-a35c-a232ed37b175" />
 
 
 
