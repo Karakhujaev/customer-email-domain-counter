@@ -31,7 +31,7 @@ func main() {
 		return
 	}
 
-	fmt.Print("Enter output file name (customers.csv): ")
+	fmt.Print("Enter output file name for example -> data.csv:  ")
 	_, err = fmt.Scanf("%s\n", &fileName)
 	if err != nil || fileName == "" {
 		fmt.Println("Invalid input. Please enter a valid file name.")
